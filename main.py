@@ -2,7 +2,7 @@
 BTC Active Range Bot
 
 每 5 分钟执行一次；当信号变化时发送提醒。
-每天西班牙时间 9:00 发送一次日报。
+每天北京时间 9:00 发送一次日报。
 
 必需环境变量: FEISHU_WEBHOOK
 可选环境变量: MODE -> conservador | equilibrado | agresivo
@@ -142,21 +142,8 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
-def is_dst(dt):
-    year = dt.year
-    march_31 = datetime(year, 3, 31)
-    dst_start = march_31 - timedelta(days=(march_31.weekday() + 1) % 7)
-    oct_31 = datetime(year, 10, 31)
-    dst_end = oct_31 - timedelta(days=(oct_31.weekday() + 1) % 7)
-    return dst_start <= dt.replace(tzinfo=None) < dst_end
-
-
-def utc_to_spain(dt):
-    return dt + timedelta(hours=2 if is_dst(dt) else 1)
-
-
-def now_spain():
-    return utc_to_spain(datetime.now(tz=timezone.utc))
+def now_beijing():
+    return datetime.now(timezone.utc) + timedelta(hours=8)
 
 
 def calc_rsi(closes, n=14):
@@ -702,7 +689,7 @@ def build_tf_block(tf, signal, cfg):
 
 
 def build_alert_message(sigs, changed_tfs, cfg):
-    timestamp = now_spain().strftime("%d/%m %H:%M") + "h"
+    timestamp = now_beijing().strftime("%d/%m %H:%M")
     changed = ", ".join(TF_LABELS[t] for t in TF_ORDER if t in changed_tfs)
     conf_emoji, conf_text, n_buy, n_sell, n_wait, n_none = calc_confluence(sigs)
     blocks = [build_tf_block(tf, sigs[tf], cfg) for tf in TF_ORDER if sigs.get(tf)]
@@ -717,18 +704,18 @@ def build_alert_message(sigs, changed_tfs, cfg):
         f"统计: 买入 {n_buy} | 卖出 {n_sell} | 观望 {n_wait} | 无区间 {n_none}"
         f"{divider}"
         + divider.join(blocks)
-        + f"{divider}西班牙时间: {timestamp}"
+        + f"{divider}北京时间: {timestamp}"
     )
 
 
 def build_daily_message(sigs, cfg):
-    date_text = now_spain().strftime("%d/%m/%Y")
+    date_text = now_beijing().strftime("%d/%m/%Y")
     conf_emoji, conf_text, n_buy, n_sell, n_wait, n_none = calc_confluence(sigs)
     blocks = [build_tf_block(tf, sigs[tf], cfg) for tf in TF_ORDER if sigs.get(tf)]
     divider = "\n" + ("─" * 26) + "\n"
     return (
         f"BTC Active Range 每日报告 | {date_text}\n"
-        f"模式: {cfg['label']} | 西班牙时间 09:00"
+        f"模式: {cfg['label']} | 北京时间 09:00"
         f"{divider}"
         f"{prob_header(sigs)}"
         f"{divider}"
@@ -736,7 +723,7 @@ def build_daily_message(sigs, cfg):
         f"统计: 买入 {n_buy} | 卖出 {n_sell} | 观望 {n_wait} | 无区间 {n_none}"
         f"{divider}"
         + divider.join(blocks)
-        + f"{divider}下次日报: 明天西班牙时间 09:00"
+        + f"{divider}下次日报: 明天北京时间 09:00"
     )
 
 
@@ -794,11 +781,11 @@ def main():
             else:
                 log.info(f"信号未变 {TF_LABELS[tf]}: {curr}")
 
-    now_es = now_spain()
-    today_str = now_es.strftime("%Y-%m-%d")
+    now_bj = now_beijing()
+    today_str = now_bj.strftime("%Y-%m-%d")
     sent_daily = False
 
-    if now_es.hour == DAILY_HOUR and last_daily != today_str:
+    if now_bj.hour == DAILY_HOUR and last_daily != today_str:
         log.info("发送每日报告...")
         if feishu_send(build_daily_message(sigs, cfg)):
             state["last_daily"] = today_str
