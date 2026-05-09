@@ -1,11 +1,11 @@
 {
   "signals": {
-    "15m": "\u65e0\u533a\u95f4",
+    "15m": "\u89c2\u671b",
     "1h": "\u89c2\u671b",
-    "4h": "\u89c2\u671b",
+    "4h": "\u5356\u51fa",
     "1d": "\u89c2\u671b",
     "1w": "\u89c2\u671b"
   },
-  "last_daily": "2026-05-01",
+  "last_daily": "2026-05-09",
   "mode": "equilibrado"
 }
